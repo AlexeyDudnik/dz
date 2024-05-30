@@ -1,9 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <initializer_list>
-
 using namespace std;
-
 struct Node {
 	int value;
 	Node* left;
@@ -15,6 +13,7 @@ struct Node {
 class BSTree : public Node {
 private:
 	Node* root;
+
 	void add_element(Node*& node, int value) {
 		if (node == nullptr) {
 			node = new Node(value);
@@ -148,12 +147,3 @@ public:
 		}
 		return false;
 	}
-	~BSTree() {
-		destroy(root);
-	}
-};
-int main() {
-	initializer_list<int> list = { 1,3,4,5,3 };
-	BSTree tree(list);
-	return 0;
-}
