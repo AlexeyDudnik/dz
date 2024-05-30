@@ -1,149 +1,150 @@
 #include <iostream>
-#include <fstream>
 #include <initializer_list>
 using namespace std;
 struct Node {
-	int value;
-	Node* left;
-	Node* right;
-	Node* previous;
-	Node() {}
-	Node(int value) : value(value), left(nullptr), right(nullptr), previous(nullptr) {}
+    int data;
+    Node* left;
+    Node* right;
+    Node* parent;
+    Node(int value) : data(value), left(nullptr), right(nullptr), parent(nullptr) {}
 };
-class BSTree : public Node {
+class BSTree {
 private:
-	Node* root;
-
-	void add_element(Node*& node, int value) {
-		if (node == nullptr) {
-			node = new Node(value);
-		}
-		else if (value < node->value) {
-			add_element(node->left, value);
-			node->left->previous = node;
-		}
-		else if (value > node->value) {
-			add_element(node->right, value);
-			node->right->previous = node;
-		}
-	}
-	bool delete_element(Node*& node, int value) {
-		if (node == nullptr) {
-			return false;
-		}
-		else if (value < node->value) {
-			return delete_element(node->left, value);
-		}
-		else if (value > node->value) {
-			return delete_element(node->right, value);
-		}
-		else if (node->left == nullptr && node->right == nullptr) {
-			delete node;
-			node = nullptr;
-		}
-		else if (node->left = nullptr) {
-			Node* temp = node;
-			node = node->right;
-			delete temp;
-		}
-		else if (node->right = nullptr) {
-			Node* temp = node;
-			node = node->left;
-			delete temp;
-		}
-		else {
-			Node* temp = node->right;
-			while (temp->left != nullptr) {
-				temp = temp->left;
-			}
-			node->value = temp->value;
-			return delete_element(node->right, temp->value);
-		}
-		return true;
-	}
-	bool find_element(Node*& node, int value) const {
-		if (node == nullptr) {
-			return false;
-		}
-		if (value < node->value) {
-			return find_element(node->left, value);
-		}
-		if (value > node->value) {
-			return find_element(node->right, value);
-		}
-		return true;
-	}
-	void print(Node* node) const {
-		if (node != nullptr) {
-			print(node->left);
-			cout << node->value << " ";
-			print(node->right);
-		}
-	}
-	bool save_to_file(Node* node, ofstream& file) const {
-		if (node != nullptr) {
-			save_to_file(node->left, file);
-			file << node->value << " ";
-			save_to_file(node->right, file);
-			return true;
-		}
-		return false;
-	}
-	bool load_from_file(Node* node, ifstream& file) {
-		int value;
-		if (file >> value) {
-			node = new Node(value);
-			load_from_file(node->left, file);
-			load_from_file(node->right, file);
-			return true;
-		}
-		return false;
-	}
-	void destroy(Node* node) {
-		if (node != nullptr) {
-			destroy(node->left);
-			destroy(node->right);
-			delete node;
-		}
-	}
+    Node* root;
+    Node* find(int value, Node* node);
+    Node* findMin(Node* node);
+    Node* remove(int value, Node* node);
+    void clear(Node* node);
+    void print(Node* node);
 public:
-	BSTree() : root(nullptr) {}
-	BSTree(initializer_list<int> list) : root(nullptr) {
-		for (int value : list) {
-			add_element(value);
-		}
-	}
-	bool add_element(int value) {
-		add_element(root, value);
-		return true;
-	}
-	bool delete_element(int value) {
-		return delete_element(root, value);
-	}
-	bool find_element(int value) {
-		return find_element(root, value);
-	}
-	void print() const {
-		print(root);
-		cout << endl;
-	}
-	bool save_to_file(const string& path) {
-		ofstream file(path);
-		if (file.is_open()) {
-			save_to_file(root, file);
-			file.close();
-			return true;
-		}
-		return false;
-	}
-	bool load_from_file(const string& path) {
-		ifstream file(path);
-		if (file.is_open()) {
-			destroy(root);
-			root = nullptr;
-			load_from_file(root, file);
-			file.close();
-			return true;
-		}
-		return false;
-	}
+    BSTree() : root(nullptr) {}
+    BSTree(initializer_list<int> list);
+    ~BSTree();
+    bool add_element(int value);
+    bool delete_element(int value);
+    bool find_element(int value);
+    void print();
+};
+BSTree::BSTree(initializer_list<int> list) {
+    for (int value : list) {
+        add_element(value);
+    }
+}
+BSTree::~BSTree() {
+    clear(root);
+}
+bool BSTree::add_element(int value) {
+    if (root == nullptr) {
+        root = new Node(value);
+        return true;
+    }
+    Node* current = root;
+    while (true) {
+        if (value < current->data) {
+            if (current->left == nullptr) {
+                current->left = new Node(value);
+                current->left->parent = current;
+                return true;
+            }
+            current = current->left;
+        }
+        else if (value > current->data) {
+            if (current->right == nullptr) {
+                current->right = new Node(value);
+                current->right->parent = current;
+                return true;
+            }
+            current = current->right;
+        }
+        else {
+            return false;
+        }
+    }
+}
+bool BSTree::delete_element(int value) {
+    root = remove(value, root);
+    return root != nullptr;
+}
+bool BSTree::find_element(int value) {
+    return find(value, root) != nullptr;
+}
+void BSTree::print() {
+    print(root);
+    cout << endl;
+}
+Node* BSTree::find(int value, Node* node) {
+    if (node == nullptr || node->data == value) {
+        return node;
+    }
+    if (value < node->data) {
+        return find(value, node->left);
+    }
+    else {
+        return find(value, node->right);
+    }
+}
+Node* BSTree::findMin(Node* node) {
+    while (node->left != nullptr) {
+        node = node->left;
+    }
+    return node;
+}
+Node* BSTree::remove(int value, Node* node) {
+    if (node == nullptr) return nullptr;
+    if (value < node->data) {
+        node->left = remove(value, node->left);
+    }
+    else if (value > node->data) {
+        node->right = remove(value, node->right);
+    }
+    else {
+        if (node->left == nullptr) {
+            Node* temp = node->right;
+            delete node;
+            return temp;
+        }
+        else if (node->right == nullptr) {
+            Node* temp = node->left;
+            delete node;
+            return temp;
+        }
+        Node* temp = findMin(node->right);
+        node->data = temp->data;
+        node->right = remove(temp->data, node->right);
+    }
+    return node;
+}
+void BSTree::clear(Node* node) {
+    if (node != nullptr) {
+        clear(node->left);
+        clear(node->right);
+        delete node;
+    }
+}
+void BSTree::print(Node* node) {
+    if (node != nullptr) {
+        print(node->left);
+        cout << node->data << " ";
+        print(node->right);
+    }
+}
+int main() {
+    BSTree tree = { 10, 5, 15, 3, 7, 12, 17 };
+    tree.print();
+    int searchValue = 7;
+    if (tree.find_element(searchValue)) {
+        cout << searchValue << " found" << endl;
+    }
+    else {
+        cout << searchValue << " not found" << endl;
+    }
+    int deleteValue = 15;
+    if (tree.delete_element(deleteValue)) {
+        cout << deleteValue << " deleted" << endl;
+    }
+    else {
+        cout << deleteValue << " not found" << endl;
+    }
+    tree.print();
+    return 0;
+}
